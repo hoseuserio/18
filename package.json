@@ -1,22 +1,62 @@
 {
-  "name": "gmgn",
+  "name": "gmgn-installer",
   "version": "1.0.0",
+  "description": "GMGN C2 Client Installer",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder build --win --x64"
+    "dev": "electron . --dev",
+    "postinstall": "node -e \"console.log('All dependencies installed successfully!')\"",
+    "setup": "npm install --production",
+    "build": "electron-builder build --win --x64",
+    "dist": "npm run build",
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC", 
-  "description": "GMGN Installer",
+  "keywords": [
+    "electron",
+    "installer",
+    "gmgn",
+    "c2"
+  ],
+  "author": "GMGN Team",
+  "license": "MIT",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gmgn/installer"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "main-entry": "main.js",
   "build": {
     "appId": "com.gmgn.installer",
     "productName": "GMGN Installer",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
     "win": {
-      "target": ["portable"],
-      "icon": "build/icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "publisherName": "GMGN"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "files": [
       "**/*",
@@ -29,27 +69,75 @@
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
       "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+      "!dist/*",
+      "!build/*"
     ],
     "extraResources": [
       {
-        "from": "build/",
-        "to": ".",
-        "filter": ["icon.ico"]
+        "from": "assets/",
+        "to": "assets/",
+        "filter": ["**/*"]
       }
     ],
-    "directories": {
-      "buildResources": "build",
-      "output": "dist"
-    },
-    "asar": true
+    "asar": true,
+    "compression": "maximum"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
-    "windows-shortcuts": "^0.1.6"
+    "windows-shortcuts": "^0.1.6",
+    "node-fetch": "^3.3.2",
+    "fs-extra": "^11.2.0",
+    "path": "^0.12.7",
+    "axios": "^1.6.7",
+    "electron-log": "^5.0.3",
+    "electron-updater": "^6.1.8",
+    "electron-store": "^8.1.0"
   },
   "devDependencies": {
-    "electron": "^33.2.1",
-    "electron-builder": "^25.1.8"
+    "electron": "^28.2.0",
+    "electron-builder": "^25.0.5",
+    "cross-env": "^7.0.3",
+    "concurrently": "^8.2.2"
+  },
+  "optionalDependencies": {
+    "winreg": "^1.2.5",
+    "node-gyp": "^10.0.1"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "icon": "assets/icon"
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "gmgn-installer"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": ["darwin"]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
+  },
+  "browserslist": [
+    "last 2 versions",
+    "> 1%",
+    "not dead"
+  ],
+  "electron-download": {
+    "mirror": "https://npm.taobao.org/mirrors/electron/",
+    "cache": "cache/electron"
   }
- }
+}
